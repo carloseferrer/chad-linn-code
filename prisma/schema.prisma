@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// User roles in the system
+enum UserRole {
+  ADMIN
+  USER
+}
+
+// User account statuses
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+// Project statuses
+enum ProjectStatus {
+  ACTIVE
+  COMPLETED
+  ON_HOLD
+  CANCELLED
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  firstName    String?
+  lastName     String?
+  role         UserRole   @default(USER)
+  status       UserStatus @default(ACTIVE)
+  lastLoginAt  DateTime?
+  createdById  String? // ID of the admin who created this user
+  createdBy    User?      @relation("UserCreatedBy", fields: [createdById], references: [id])
+  createdUsers User[]     @relation("UserCreatedBy")
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  projects     Project[]
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+  @@index([createdById])
+}
+
+model Project {
+  id             String         @id @default(cuid())
+  name           String
+  client         String
+  status         ProjectStatus  @default(ACTIVE)
+  contractAmount Float
+  paidToDate     Float          @default(0)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  userId         String
+  user           User           @relation(fields: [userId], references: [id])
+  milestones     Milestone[]
+  customValues   ProjectValue[]
+  description    String?        @db.Text
+  startDate      DateTime?
+  endDate        DateTime?
+  priority       Int            @default(1)
+
+  @@index([userId])
+  @@index([status])
+  @@index([priority])
+}
+
+model CustomColumn {
+  id                    String         @id @default(cuid())
+  name                  String
+  dataType              String
+  formulaExpression     String?        @db.Text
+  conditionalFormatting Json?
+  isRequired            Boolean        @default(false)
+  defaultValue          String?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  createdById           String // ID del usuario que creó esta columna
+  projectValues         ProjectValue[]
+
+  @@index([dataType])
+}
+
+model ProjectValue {
+  id           String       @id @default(cuid())
+  value        String       @db.Text
+  projectId    String
+  columnId     String
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  customColumn CustomColumn @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@unique([projectId, columnId])
+  @@index([projectId])
+  @@index([columnId])
+}
+
+model MilestoneTemplate {
+  id          String              @id @default(cuid())
+  name        String              @unique
+  description String?             @db.Text
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  createdById String // ID del usuario que creó esta plantilla
+  isActive    Boolean             @default(true)
+  milestones  TemplateMilestone[]
+
+  @@index([isActive])
+}
+
+model TemplateMilestone {
+  id               String            @id @default(cuid())
+  name             String
+  percentageWeight Float
+  defaultDuration  Int? // in days
+  templateId       String
+  template         MilestoneTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  order            Int               @default(0) // To maintain milestone order
+
+  @@index([templateId])
+  @@index([order])
+}
+
+model Milestone {
+  id               String    @id @default(cuid())
+  name             String
+  percentageWeight Float
+  completion       Float     @default(0)
+  targetDate       DateTime?
+  actualStartDate  DateTime?
+  actualEndDate    DateTime?
+  projectId        String
+  project          Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  notes            String?   @db.Text
+  order            Int       @default(0) // To maintain milestone order
+
+  @@index([projectId])
+  @@index([order])
+}
