@@ -21,132 +21,60 @@ enum UserStatus {
   SUSPENDED
 }
 
-// Project statuses
-enum ProjectStatus {
-  ACTIVE
-  COMPLETED
-  ON_HOLD
-  CANCELLED
-}
-
 model User {
-  id           String     @id @default(cuid())
-  email        String     @unique
+  id           String      @id @default(cuid())
+  email        String      @unique
   firstName    String?
   lastName     String?
-  role         UserRole   @default(USER)
-  status       UserStatus @default(ACTIVE)
+  role         UserRole    @default(USER)
+  status       UserStatus  @default(ACTIVE)
   lastLoginAt  DateTime?
-  createdById  String? // ID of the admin who created this user
-  createdBy    User?      @relation("UserCreatedBy", fields: [createdById], references: [id])
-  createdUsers User[]     @relation("UserCreatedBy")
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  projects     Project[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  timeEntries  TimeEntry[] // Relación con las entradas de tiempo
+  notionUserId String? // ID del usuario en Notion para relacionar
 
   @@index([email])
   @@index([role])
   @@index([status])
-  @@index([createdById])
 }
 
-model Project {
-  id             String         @id @default(cuid())
-  name           String
-  client         String
-  status         ProjectStatus  @default(ACTIVE)
-  contractAmount Float
-  paidToDate     Float          @default(0)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  userId         String
-  user           User           @relation(fields: [userId], references: [id])
-  milestones     Milestone[]
-  customValues   ProjectValue[]
-  description    String?        @db.Text
-  startDate      DateTime?
-  endDate        DateTime?
-  priority       Int            @default(1)
+model TimeEntry {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  date        DateTime
+  hoursWorked Float
+  projectId   String // ID del proyecto en Notion
+  taskId      String // ID de la tarea en Notion
+  notionId    String? // ID de la entrada en Notion
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  description String?  @db.Text
 
   @@index([userId])
-  @@index([status])
-  @@index([priority])
-}
-
-model CustomColumn {
-  id                    String         @id @default(cuid())
-  name                  String
-  dataType              String
-  formulaExpression     String?        @db.Text
-  conditionalFormatting Json?
-  isRequired            Boolean        @default(false)
-  defaultValue          String?
-  createdAt             DateTime       @default(now())
-  updatedAt             DateTime       @updatedAt
-  createdById           String // ID del usuario que creó esta columna
-  projectValues         ProjectValue[]
-
-  @@index([dataType])
-}
-
-model ProjectValue {
-  id           String       @id @default(cuid())
-  value        String       @db.Text
-  projectId    String
-  columnId     String
-  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  customColumn CustomColumn @relation(fields: [columnId], references: [id], onDelete: Cascade)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-
-  @@unique([projectId, columnId])
+  @@index([date])
   @@index([projectId])
-  @@index([columnId])
 }
 
-model MilestoneTemplate {
-  id          String              @id @default(cuid())
-  name        String              @unique
-  description String?             @db.Text
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-  createdById String // ID del usuario que creó esta plantilla
-  isActive    Boolean             @default(true)
-  milestones  TemplateMilestone[]
+// Cache de proyectos de Notion
+model NotionProject {
+  id        String   @id // ID del proyecto en Notion
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@index([isActive])
+  @@index([name])
 }
 
-model TemplateMilestone {
-  id               String            @id @default(cuid())
-  name             String
-  percentageWeight Float
-  defaultDuration  Int? // in days
-  templateId       String
-  template         MilestoneTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  order            Int               @default(0) // To maintain milestone order
-
-  @@index([templateId])
-  @@index([order])
-}
-
-model Milestone {
-  id               String    @id @default(cuid())
-  name             String
-  percentageWeight Float
-  completion       Float     @default(0)
-  targetDate       DateTime?
-  actualStartDate  DateTime?
-  actualEndDate    DateTime?
-  projectId        String
-  project          Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  notes            String?   @db.Text
-  order            Int       @default(0) // To maintain milestone order
+// Cache de tareas de Notion
+model NotionTask {
+  id        String   @id // ID de la tarea en Notion
+  name      String
+  projectId String // ID del proyecto en Notion
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([projectId])
-  @@index([order])
+  @@index([name])
 }
