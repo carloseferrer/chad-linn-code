@@ -31,8 +31,8 @@ model User {
   lastLoginAt  DateTime?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
-  timeEntries  TimeEntry[] // Relación con las entradas de tiempo
-  notionUserId String? // ID del usuario en Notion para relacionar
+  timeEntries  TimeEntry[]
+  notionUserId String? // ID del empleado en Notion
 
   @@index([email])
   @@index([role])
@@ -40,41 +40,20 @@ model User {
 }
 
 model TimeEntry {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  date        DateTime
-  hoursWorked Float
-  projectId   String // ID del proyecto en Notion
-  taskId      String // ID de la tarea en Notion
-  notionId    String? // ID de la entrada en Notion
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  description String?  @db.Text
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  date           DateTime
+  hoursWorked    Float[]
+  projectIds     String[]
+  projectNames   String[]
+  taskIds        String[]
+  taskNames      String[]
+  descriptions   String[] @db.Text
+  notionEntryIds String[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@index([userId])
   @@index([date])
-  @@index([projectId])
-}
-
-// Cache de proyectos de Notion
-model NotionProject {
-  id        String   @id // ID del proyecto en Notion
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([name])
-}
-
-// Cache de tareas de Notion
-model NotionTask {
-  id        String   @id // ID de la tarea en Notion
-  name      String
-  projectId String // ID del proyecto en Notion
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([projectId])
-  @@index([name])
 }

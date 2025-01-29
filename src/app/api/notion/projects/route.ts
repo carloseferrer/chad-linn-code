@@ -4,9 +4,9 @@ import { NOTION_CONFIG } from "@/lib/config/notion";
 import { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
 
 interface TitlePropertyValue {
-  title: Array<{
+  title: {
     plain_text: string;
-  }>;
+  }[];
 }
 
 export async function GET() {
@@ -23,24 +23,25 @@ export async function GET() {
 
     const projects = response.results.map((page) => {
       const typedPage = page as PageObjectResponse;
-      const jobNameProperty = typedPage.properties[
-        "Job Name"
-      ] as TitlePropertyValue;
-
       return {
         id: typedPage.id,
-        name: jobNameProperty.title[0]?.plain_text || "Untitled",
+        name:
+          (typedPage.properties["Job Name"] as TitlePropertyValue).title[0]
+            ?.plain_text || "Unknown Project",
       };
     });
 
-    return NextResponse.json({ success: true, projects });
-  } catch (error: any) {
+    return NextResponse.json({
+      success: true,
+      projects,
+    });
+  } catch (error) {
     console.error("Error fetching projects:", error);
     return NextResponse.json(
       {
         success: false,
         message: "Error fetching projects",
-        error: error.message,
+        error: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );

@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { TimesheetDashboard } from "@/components/dashboard/TimesheetDashboard";
 import { ROUTES } from "@/lib/utils/url";
+
 export default async function DashboardPage() {
   const supabase = await createClient();
 
@@ -19,25 +20,30 @@ export default async function DashboardPage() {
     .eq("email", user.email)
     .single();
 
-  console.log(userData);
-
   if (userData?.role === "ADMIN") {
     redirect(ROUTES.ADMIN.DASHBOARD);
   }
 
+  // Obtener las entradas de tiempo del usuario
+  const { data: timeEntries } = await supabase
+    .from("TimeEntry")
+    .select("*")
+    .eq("userId", user.id)
+    .order("date", { ascending: false });
+
   return (
-    <div className="container py-10 px-4">
-      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Bienvenido</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>Email: {user.email}</p>
-            <p>Nombre: {userData?.firstName || "No especificado"}</p>
-          </CardContent>
-        </Card>
+    <div className="container py-6">
+      <div className="flex flex-col gap-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Bienvenido, {userData?.firstName || user.email}
+          </h1>
+          <p className="text-muted-foreground">
+            Aquí está el resumen de tus registros de tiempo
+          </p>
+        </div>
+
+        <TimesheetDashboard entries={timeEntries || []} />
       </div>
     </div>
   );

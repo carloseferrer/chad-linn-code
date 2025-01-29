@@ -7,24 +7,20 @@ export const ROUTES = {
     DASHBOARD: "/dashboard",
     PROFILE: "/profile",
     PROJECTS: "/projects",
+    SETTINGS: "/settings",
   },
 
   ADMIN: {
     DASHBOARD: "/admin/dashboard",
     USERS: "/admin/users",
-    SETTINGS: "/admin/settings",
     PROJECTS: "/admin/projects",
     MILESTONES: "/admin/milestones",
+    EMPLOYEES: "/admin/employees",
   },
 
-  PROJECTS: {
-    DASHBOARD: "/projects/dashboard",
-    DETAIL: "/projects/:id",
-  },
-
-  MILESTONES: {
-    DASHBOARD: "/milestones/dashboard",
-    DETAIL: "/milestones/:id",
+  TIMESHEET: {
+    DASHBOARD: "/timesheet",
+    INFO: "/timesheet-info",
   },
 
   API: {

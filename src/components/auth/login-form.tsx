@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { RefreshCcw } from "lucide-react";
 import { ROUTES } from "@/lib/utils/url";
 
 export function LoginForm() {
@@ -60,7 +60,16 @@ export function LoginForm() {
   };
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full max-w-md relative">
+      {isLoading && (
+        <div className="absolute inset-0 bg-white/50 backdrop-blur-sm flex items-center justify-center rounded-lg z-10">
+          <div className="flex flex-col items-center gap-2">
+            <RefreshCcw className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Authenticating...</p>
+          </div>
+        </div>
+      )}
+
       <CardHeader>
         <CardTitle className="text-2xl text-center">Welcome Back</CardTitle>
       </CardHeader>
@@ -109,23 +118,8 @@ export function LoginForm() {
             />
           </div>
 
-          <Button
-            className="w-full"
-            type="submit"
-            disabled={isLoading}
-            aria-busy={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <Loader2
-                  className="mr-2 h-4 w-4 animate-spin"
-                  aria-hidden="true"
-                />
-                <span>Signing in...</span>
-              </>
-            ) : (
-              "Sign In"
-            )}
+          <Button className="w-full" type="submit" disabled={isLoading}>
+            Sign In
           </Button>
         </form>
       </CardContent>

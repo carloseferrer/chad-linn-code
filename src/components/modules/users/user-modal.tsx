@@ -9,42 +9,55 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { User } from "@/lib/types";
+import { toast } from "react-hot-toast";
 
 interface UserModalProps {
   isOpen: boolean;
   onClose: () => void;
-  user?: User; // The user object when editing
 }
 
-export function UserModal({ isOpen, onClose, user }: UserModalProps) {
+export function UserModal({ isOpen, onClose }: UserModalProps) {
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    email: user?.email || "",
-    firstName: user?.firstName || "",
-    lastName: user?.lastName || "",
-    role: user?.role || "USER",
-    status: user?.status || "ACTIVE",
+    email: "",
+    password: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission here
-    console.log(formData);
-    onClose();
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          role: "USER",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create employee");
+      }
+
+      toast.success("Employee created successfully!");
+      setFormData({ email: "", password: "" });
+      onClose();
+    } catch (error) {
+      console.error("Error creating employee:", error);
+      toast.error("Failed to create employee");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{user ? "Edit User" : "Add New User"}</DialogTitle>
+          <DialogTitle>Add New Employee</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -59,71 +72,25 @@ export function UserModal({ isOpen, onClose, user }: UserModalProps) {
               required
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label htmlFor="firstName">First Name</label>
-              <Input
-                id="firstName"
-                value={formData.firstName}
-                onChange={(e) =>
-                  setFormData({ ...formData, firstName: e.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="lastName">Last Name</label>
-              <Input
-                id="lastName"
-                value={formData.lastName}
-                onChange={(e) =>
-                  setFormData({ ...formData, lastName: e.target.value })
-                }
-              />
-            </div>
-          </div>
           <div className="space-y-2">
-            <label htmlFor="role">Role</label>
-            <Select
-              value={formData.role}
-              onValueChange={(value) =>
-                setFormData({ ...formData, role: value as "ADMIN" | "USER" })
+            <label htmlFor="password">Password</label>
+            <Input
+              id="password"
+              type="password"
+              value={formData.password}
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
               }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="USER">User</SelectItem>
-                <SelectItem value="ADMIN">Admin</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="status">Status</label>
-            <Select
-              value={formData.status}
-              onValueChange={(value) =>
-                setFormData({
-                  ...formData,
-                  status: value as "ACTIVE" | "INACTIVE" | "SUSPENDED",
-                })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ACTIVE">Active</SelectItem>
-                <SelectItem value="INACTIVE">Inactive</SelectItem>
-                <SelectItem value="SUSPENDED">Suspended</SelectItem>
-              </SelectContent>
-            </Select>
+              required
+            />
           </div>
           <div className="flex justify-end gap-4">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit">Save</Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Creating..." : "Create Employee"}
+            </Button>
           </div>
         </form>
       </DialogContent>
